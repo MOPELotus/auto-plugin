@@ -1,4 +1,5 @@
 import plugin from "../../../lib/plugins/plugin.js";
+import { getEventBot } from '../model/groupBot.js'
 import loader from "../../../lib/plugins/loader.js";
 
 export class autoCommandHelp extends plugin {
@@ -116,10 +117,11 @@ export class autoCommandHelp extends plugin {
 
   async sendByForwardMsg(MsgArray){
     let massage = []
+    const self = getEventBot(this.e)
     for (let msgArrayElement of MsgArray) {massage.push({
       message: msgArrayElement,
-      nickname: Bot.nickname,
-      user_id: Bot.uin
+      nickname: self.nickname,
+      user_id: self.uin
     })}
     let forwardMsg = await Bot.makeForwardMsg(massage);
     return await this.e.reply(forwardMsg, false, {recallMsg:0})

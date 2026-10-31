@@ -3,6 +3,7 @@ import { createRequire } from 'module';
 import lodash from 'lodash';
 import fs from 'node:fs';
 import common from '../../../lib/common/common.js';
+import { getMainBot } from '../model/groupBot.js';
 import setting from "../model/setting.js";
 import PluginsLoader from "../../../lib/plugins/loader.js";
 
@@ -177,7 +178,8 @@ export class autoUpdate extends plugin {
       await this.saveLog();
     }
     if (this.appconfig.log === 2) {
-      let key = `Yz:auto-plugin:Update:${Bot.uin}`;
+      // 与 autoSendUpdateLog 使用同一个确定性 Bot 标识。
+      let key = `Yz:auto-plugin:Update:${getMainBot().uin}`;
       redis.set(key, '1', { EX: 72000 });
     }
   }

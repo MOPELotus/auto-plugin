@@ -1,4 +1,5 @@
 import plugin from "../../../lib/plugins/plugin.js";
+import { getGroupBot, getMainBot } from '../model/groupBot.js'
 import PluginsLoader from "../../../lib/plugins/loader.js";
 import schedule from "node-schedule";
 import setting from "../model/setting.js";
@@ -73,17 +74,19 @@ export class autoWebSocketTask extends plugin {
             if (!cfg.bot.online_msg_exp) {
                 return
             }
-            const key = `Yz:AutoPlugin:WSLog:${Bot.uin}`
+            // 确定性标识：Bot.uin 随机取值会让这个去重 key 每次都不一样
+            const key = `Yz:AutoPlugin:WSLog:${getMainBot().uin}`
             if (await redis.get(key)) {
                 return
             }
             await redis.set(key, '1', { EX: cfg.bot.online_msg_exp })
             let massage = []
+            const self = getMainBot()
             for (let msg of logArray) {
                 massage.push({
                     message: msg,
-                    nickname: Bot.nickname,
-                    user_id: Bot.uin
+                    nickname: self.nickname,
+                    user_id: self.uin
                 })
             }
             let forwardMsg = await Bot.makeForwardMsg(massage);
@@ -98,7 +101,8 @@ export class autoWebSocketTask extends plugin {
 
         // 模拟主人发送一条消息
         let msg = {
-            self_id: Bot.uin,
+            // 模拟出来的事件要挂在这个群真正所属的 Bot 上，否则下游按 self_id 找不到人
+            self_id: getGroupBot(group_id).uin,
             user_id: cfg.masterQQ[0],
             group_id: group_id,
             time: new Date().getTime() / 1000,

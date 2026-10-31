@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import { getGroupBot } from './model/groupBot.js'
 import setting from './model/setting.js'
 
 logger.info('---------!_!---------')
@@ -19,7 +20,8 @@ setTimeout(async function () {
   if (GroupNameConfig.enable) {
     Bot.gl.forEach((v, k) => {
       try {
-        Bot.pickGroup(k).setCard(Bot.uin, Bot.nickname)
+        const self = getGroupBot(k)
+        Bot.pickGroup(k).setCard(self.uin, self.nickname)
       } catch (e) {
         logger.info('【自动化插件】未能完成群名片复位，建议手动完成')
       }

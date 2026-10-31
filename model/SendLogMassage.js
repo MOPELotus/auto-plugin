@@ -1,5 +1,6 @@
 // 消息回复处理模块 提供一些消息、转发消息加工以及消息分割等方法
 import setting from "./setting.js";
+import { getMainBot } from './groupBot.js'
 
 class SendLogMassage {
   constructor () {}
@@ -15,10 +16,12 @@ class SendLogMassage {
       return await Bot.sendGroupMsg(groupID, MsgArray[0])
     }
 
+    // 转发节点不能用 Bot.uin（多 Bot 下随机），否则头像昵称会串到别的适配器
+    const self = getMainBot()
     for (let msgArrayElement of MsgArray) {massage.push({
       message: msgArrayElement,
-      nickname: Bot.nickname,
-      user_id: Bot.uin
+      nickname: self.nickname,
+      user_id: self.uin
     })}
     let result
     let forwardMsg = await Bot.makeForwardMsg(massage);

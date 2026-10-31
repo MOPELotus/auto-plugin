@@ -1,4 +1,5 @@
 import plugin from "../../../lib/plugins/plugin.js";
+import { getEventBot } from '../model/groupBot.js'
 import PluginsLoader from "../../../lib/plugins/loader.js";
 import schedule from "node-schedule";
 import setting from "../model/setting.js";
@@ -89,11 +90,12 @@ export class taskManage extends plugin {
         // 发送任务启动日志
         if (logArray.length > 0) {
             let massage = []
+            const self = getEventBot(this.e)
             for (let msg of logArray) {
                 massage.push({
                     message: msg,
-                    nickname: Bot.nickname,
-                    user_id: Bot.uin
+                    nickname: self.nickname,
+                    user_id: self.uin
                 })
             }
             let forwardMsg = await Bot.makeForwardMsg(massage);

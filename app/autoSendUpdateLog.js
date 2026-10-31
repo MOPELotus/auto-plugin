@@ -1,4 +1,5 @@
 import plugin from '../../../lib/plugins/plugin.js'
+import { getMainBot, getAllBotUin, getEventBot } from '../model/groupBot.js'
 import setting from "../model/setting.js";
 import common from "../../../lib/common/common.js";
 import cfg from "../../../lib/config/config.js";
@@ -39,14 +40,22 @@ export class autoSendUpdateLog extends plugin {
       }
     if (!this.appconfig.remind) {return}
 
-    let key = `Yz:loginMsg:${Bot.uin}`
-    await redis.set(key, '1', { EX: cfg.bot.online_msg_exp })
+    //空值检查，防止 cfg.bot.online_msg_exp 为 null 或 undefined 时导致 Redis 操作失败
+    //检查配置值是否存在，如果不存在则跳过 Redis 操作，避免程序崩溃
+    if (!cfg.bot.online_msg_exp) {
+      return
+    }
+    // Yz:loginMsg 是 Yunzai 按 Bot 分别记的（lib/events/connect.js 用 e.self_id），
+    // 这里要压掉每一个 Bot 的上线提醒，不能只写 Bot.uin 随机挑中的那一个
+    for (const uin of getAllBotUin()) {
+      await redis.set(`Yz:loginMsg:${uin}`, '1', { EX: cfg.bot.online_msg_exp })
+    }
   }
 
   async listen () {
     if (this.appconfig.log !== 2) {return false}
     if (!this.e.isMaster) {return false}
-    let key = `Yz:auto-plugin:Update:${Bot.uin}`
+    let key = `Yz:auto-plugin:Update:${getMainBot().uin}`
     if (!await redis.get(key)) return false
     await this.sendLog(cfg.masterQQ[0])
     await redis.del(key)
@@ -62,6 +71,8 @@ export class autoSendUpdateLog extends plugin {
     let updataLog = await setting.getData(`autoUpdata`, filename)
     if(!updataLog) return
     let replyMsg = []
+    // 转发节点的 user_id/nickname 要跟着实际发消息的 Bot 走
+    const self = getEventBot(this.e)
     for (let pluginLog of updataLog){
       let pluginName = pluginLog.plugin
       let message = pluginLog.logs
@@ -77,8 +88,8 @@ export class autoSendUpdateLog extends plugin {
       }
       replyMsg.push({
         message: message.length>1?message.join('\n'):message,
-        nickname: Bot.nickname,
-        user_id: Bot.uin
+        nickname: self.nickname,
+        user_id: self.uin
       })
     }
     if(!replyMsg) return
